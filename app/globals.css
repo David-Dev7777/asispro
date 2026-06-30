@@ -1,26 +1,262 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+
+  /* ════════════════════════════════════════════════════════════
+   DASHBOARD TOKENS  —  agregar al final de globals.css
+   ════════════════════════════════════════════════════════════ */
+:root {
+  --db-brand:           #2563EB;
+  --db-brand-light:     #EFF6FF;
+  --db-in:              #16A34A;
+  --db-in-light:        #dcfce7;
+  --db-out:             #DC2626;
+  --db-out-light:       #fef2f2;
+  --db-pending:         #D97706;
+  --db-pending-light:   #fffbeb;
+  --db-approved:        #16A34A;
+  --db-approved-light:  #f0fdf4;
+  --db-rejected:        #DC2626;
+  --db-rejected-light:  #fef2f2;
+  --db-border:          #E5E7EB;
+  --db-text:            #111827;
+  --db-muted:           #6B7280;
+  --db-bg:              #F9FAFB;
+  --db-card:            #FFFFFF;
+  --db-radius:          12px;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.dark {
+  --db-brand:           #3B82F6;
+  --db-brand-light:     #1e3a5f;
+  --db-in:              #22C55E;
+  --db-in-light:        #052e16;
+  --db-out:             #F87171;
+  --db-out-light:       #450a0a;
+  --db-pending:         #FBBF24;
+  --db-pending-light:   #451a03;
+  --db-approved:        #22C55E;
+  --db-approved-light:  #052e16;
+  --db-rejected:        #F87171;
+  --db-rejected-light:  #450a0a;
+  --db-border:          #374151;
+  --db-text:            #F9FAFB;
+  --db-muted:           #9CA3AF;
+  --db-bg:              #111827;
+  --db-card:            #1F2937;
+}
+
+/* ─── Layout ──────────────────────────────────────────────── */
+.db-page       { max-width: 680px; margin: 0 auto; padding: 24px 16px 48px; }
+.db-page-date  { font-size: 13px; color: var(--db-muted); text-transform: capitalize; margin-bottom: 4px; }
+.db-page-title { font-size: 22px; font-weight: 600; margin-bottom: 24px; color: var(--db-text); }
+
+/* ─── Tabs ────────────────────────────────────────────────── */
+.db-tabs { display: flex; gap: 4px; background: var(--db-border); border-radius: 10px; padding: 4px; margin-bottom: 24px; }
+.db-tab  { flex: 1; padding: 8px 0; border: none; background: transparent; cursor: pointer;
+           border-radius: 7px; font-size: 13px; font-weight: 500; color: var(--db-muted); transition: all .15s; }
+.db-tab.active { background: var(--db-card); color: var(--db-text); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+
+/* ─── Check-in card ───────────────────────────────────────── */
+.db-checkin-card   { background: var(--db-card); border-radius: var(--db-radius); border: 1px solid var(--db-border); padding: 20px; margin-bottom: 16px; }
+.db-checkin-header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.db-status-dot     { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.db-dot-in         { background: var(--db-in); box-shadow: 0 0 0 3px var(--db-in-light); }
+.db-dot-out        { background: var(--db-muted); }
+.db-status-text    { font-size: 14px; font-weight: 500; flex: 1; color: var(--db-text); }
+.db-hours-today    { font-size: 13px; color: var(--db-muted); font-variant-numeric: tabular-nums; }
+.db-checkin-btn    { width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 15px;
+                     font-weight: 600; cursor: pointer; transition: opacity .15s; }
+.db-checkin-btn:disabled { opacity: .6; cursor: not-allowed; }
+.db-btn-checkin    { background: var(--db-brand); color: #fff; }
+.db-btn-checkout   { background: var(--db-out-light); color: var(--db-out); border: 1px solid var(--db-out); }
+.db-gps-hint       { font-size: 12px; color: var(--db-muted); text-align: center; margin-top: 8px; }
+
+/* ─── Log list ────────────────────────────────────────────── */
+.db-log-list { margin-top: 16px; border-top: 1px solid var(--db-border); padding-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.db-log-row  { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.db-log-type { font-weight: 500; width: 56px; }
+.db-type-in  { color: var(--db-in); }
+.db-type-out { color: var(--db-out); }
+.db-log-time { flex: 1; font-variant-numeric: tabular-nums; color: var(--db-text); }
+.db-log-dist { color: var(--db-muted); }
+
+/* ─── Messages ────────────────────────────────────────────── */
+.db-msg-ok    { margin-top: 10px; font-size: 13px; color: var(--db-approved); }
+.db-msg-error { margin-top: 10px; font-size: 13px; color: var(--db-rejected); }
+
+/* ─── Sections ────────────────────────────────────────────── */
+.db-section        { background: var(--db-card); border-radius: var(--db-radius); border: 1px solid var(--db-border); padding: 20px; }
+.db-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.db-section-title  { font-size: 16px; font-weight: 600; color: var(--db-text); }
+
+/* ─── Balance strip ───────────────────────────────────────── */
+.db-balance-strip   { display: flex; align-items: center; background: var(--db-brand-light); border-radius: 10px; padding: 14px 20px; margin-bottom: 16px; }
+.db-balance-item    { flex: 1; text-align: center; }
+.db-balance-divider { width: 1px; height: 32px; background: var(--db-border); }
+.db-balance-num     { display: block; font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--db-brand); }
+.db-balance-num.used { color: var(--db-muted); }
+.db-balance-num.ok   { color: var(--db-approved); }
+.db-balance-num.low  { color: var(--db-out); }
+.db-balance-lbl     { font-size: 11px; color: var(--db-muted); text-transform: uppercase; letter-spacing: .04em; }
+
+/* ─── Form ────────────────────────────────────────────────── */
+.db-form-card  { background: var(--db-bg); border-radius: 10px; padding: 16px; margin-bottom: 16px;
+                 border: 1px solid var(--db-border); display: flex; flex-direction: column; gap: 12px; }
+.db-form-row   { display: flex; flex-direction: column; gap: 4px; }
+.db-form-label { font-size: 12px; font-weight: 500; color: var(--db-muted); text-transform: uppercase; letter-spacing: .04em; }
+.db-form-input { padding: 9px 12px; border: 1px solid var(--db-border); border-radius: 8px;
+                 font-size: 14px; background: var(--db-card); color: var(--db-text); outline: none; }
+.db-form-input:focus    { border-color: var(--db-brand); }
+.db-form-textarea       { resize: vertical; min-height: 72px; }
+
+/* ─── Buttons ─────────────────────────────────────────────── */
+.db-btn-primary          { padding: 10px 16px; background: var(--db-brand); color: #fff; border: none;
+                           border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.db-btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+.db-btn-secondary        { padding: 7px 14px; background: transparent; border: 1px solid var(--db-border);
+                           border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--db-text); cursor: pointer; }
+
+/* ─── Table ───────────────────────────────────────────────── */
+.db-table-wrap              { overflow-x: auto; }
+.db-data-table              { width: 100%; border-collapse: collapse; font-size: 13px; }
+.db-data-table th           { text-align: left; padding: 6px 8px; font-size: 11px; font-weight: 600;
+                              text-transform: uppercase; letter-spacing: .04em; color: var(--db-muted);
+                              border-bottom: 1px solid var(--db-border); }
+.db-data-table td           { padding: 10px 8px; border-bottom: 1px solid var(--db-border); color: var(--db-text); }
+.db-data-table tr:last-child td { border-bottom: none; }
+.db-origin-cell             { color: var(--db-muted); }
+.db-empty-msg               { font-size: 13px; color: var(--db-muted); padding: 12px 0; text-align: center; }
+
+/* ─── Badges ──────────────────────────────────────────────── */
+.db-badge          { display: inline-block; padding: 3px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+.db-badge-pending  { background: var(--db-pending-light);  color: var(--db-pending); }
+.db-badge-approved { background: var(--db-approved-light); color: var(--db-approved); }
+.db-badge-rejected { background: var(--db-rejected-light); color: var(--db-rejected); }
 }
