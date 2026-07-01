@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { EmployeeNav } from "@/components/employee/employee-nav"
+import { signOut } from "@/lib/auth/signout"
 import { LogOut, Briefcase, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -35,7 +36,7 @@ export function EmployeeSidebar({ firstName, lastName, position }: Props) {
       <EmployeeNav onNavigate={() => setOpen(false)} />
 
       <div className="p-4 border-t">
-        <form action="/auth/signout" method="post">
+        <form action={signOut}>
           <button
             type="submit"
             className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors w-full"
