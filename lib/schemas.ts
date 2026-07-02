@@ -55,7 +55,8 @@ export const employeeSchema = z.object({
   address:       z.string().min(1, "La dirección es obligatoria").max(200).trim(),
   position:      z.string().max(100).optional(),
   department_id: z.string().uuid().nullable().optional(),
-  hour_rate:     z.number().min(0).optional(),
+  hire_date:     z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida").nullable().optional(),
+  vacation_days: z.number().min(0).optional(),
 })
 
 // ─── Onboarding ───────────────────────────────────────────────────────────────

@@ -11,7 +11,7 @@ export async function getEmployees() {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("employees")
-    .select("*, departments(id, name)")
+    .select("*, departments(id, name), overtime_requests(hours, status)")
     .order("last_name")
   if (error) throw error
   return data
@@ -24,7 +24,8 @@ export async function createEmployee(form: {
   address: string
   position: string
   department_id: string | null
-  hour_rate: number
+  hire_date?: string | null
+  vacation_days?: number
 }) {
   const parsed = employeeSchema.safeParse(form)
   if (!parsed.success) return { success: false, error: parsed.error.issues[0].message }
@@ -56,7 +57,8 @@ export async function updateEmployee(id: string, form: {
   address?: string
   position?: string
   department_id?: string | null
-  hour_rate?: number
+  hire_date?: string | null
+  vacation_days?: number
 }) {
   const idParsed = idSchema.safeParse(id)
   if (!idParsed.success) return { success: false, error: "ID inválido" }
@@ -73,6 +75,16 @@ export async function updateEmployee(id: string, form: {
   if (error) return { success: false, error: error.message }
   await revalidateEmployees()
   return { success: true }
+}
+
+export async function getOvertimeAprobado() {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("overtime_requests")
+    .select("employee_id, hours, status")
+    .eq("status", "approved")
+  if (error) throw error
+  return data ?? []
 }
 
 export async function deleteEmployee(id: string) {

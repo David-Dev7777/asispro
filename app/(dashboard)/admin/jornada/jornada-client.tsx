@@ -36,7 +36,7 @@ type Settings = {
   work_days: string[] | null
 }
 
-const DAY_KEYS = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"]
+const DAY_KEYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
 
 function formatTime(ts: string) {
   const date = new Date(ts)
@@ -47,7 +47,7 @@ function formatTime(ts: string) {
 
 function calcHoras(logs: Log[], employeeId: string) {
   const empLogs = logs.filter(l => l.employees?.id === employeeId)
-  const ins  = empLogs.filter(l => l.type === "check_in")
+  const ins = empLogs.filter(l => l.type === "check_in")
   const outs = empLogs.filter(l => l.type === "check_out")
   let mins = 0
   ins.forEach((ci, i) => {
@@ -77,7 +77,7 @@ function getAttendanceStatus(
 }
 
 function AttendanceBadge({ status }: { status: "puntual" | "atrasado" | "ausente" }) {
-  if (status === "puntual")  return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Puntual</Badge>
+  if (status === "puntual") return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Puntual</Badge>
   if (status === "atrasado") return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">Atrasado</Badge>
   return <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Ausente</Badge>
 }
@@ -124,22 +124,22 @@ export default function JornadaClient({ initialDepartments, initialLogs, today, 
 
   // Calcular status de cada empleado
   type EmployeeWithStatus = {
-  emp: NonNullable<Log["employees"]>
-  checkIn: Log | undefined
-  checkOut: Log | undefined
-  horas: string | null
-  status: "puntual" | "atrasado" | "ausente"
-}
+    emp: NonNullable<Log["employees"]>
+    checkIn: Log | undefined
+    checkOut: Log | undefined
+    horas: string | null
+    status: "puntual" | "atrasado" | "ausente"
+  }
 
-const employeesWithStatus: EmployeeWithStatus[] = byDep.map(emp => {
-  if (!emp) return null
-  const empLogs = logs.filter(l => l.employees?.id === emp.id)
-  const checkIn  = empLogs.find(l => l.type === "check_in")
-  const checkOut = empLogs.filter(l => l.type === "check_out").at(-1)
-  const horas    = calcHoras(logs, emp.id)
-  const status   = getAttendanceStatus(checkIn, settings?.work_start_time ?? null, settings?.late_tolerance_minutes ?? null)
-  return { emp, checkIn, checkOut, horas, status }
-}).filter(Boolean) as EmployeeWithStatus[]
+  const employeesWithStatus: EmployeeWithStatus[] = byDep.map(emp => {
+    if (!emp) return null
+    const empLogs = logs.filter(l => l.employees?.id === emp.id)
+    const checkIn = empLogs.find(l => l.type === "check_in")
+    const checkOut = empLogs.filter(l => l.type === "check_out").at(-1)
+    const horas = calcHoras(logs, emp.id)
+    const status = getAttendanceStatus(checkIn, settings?.work_start_time ?? null, settings?.late_tolerance_minutes ?? null)
+    return { emp, checkIn, checkOut, horas, status }
+  }).filter(Boolean) as EmployeeWithStatus[]
 
   // Filtrar por status
   const filtered = filterStatus === "all"
@@ -162,9 +162,9 @@ const employeesWithStatus: EmployeeWithStatus[] = byDep.map(emp => {
     })
   }
 
-  const puntuales  = employeesWithStatus.filter(e => e.status === "puntual").length
-  const atrasados  = employeesWithStatus.filter(e => e.status === "atrasado").length
-  const ausentes   = employeesWithStatus.filter(e => e.status === "ausente").length
+  const puntuales = employeesWithStatus.filter(e => e.status === "puntual").length
+  const atrasados = employeesWithStatus.filter(e => e.status === "atrasado").length
+  const ausentes = employeesWithStatus.filter(e => e.status === "ausente").length
 
   return (
     <div className="space-y-6">
@@ -173,11 +173,12 @@ const employeesWithStatus: EmployeeWithStatus[] = byDep.map(emp => {
         <p className="text-sm text-muted-foreground mt-1">Seguimiento de asistencia diaria</p>
       </div>
 
+
       {/* Filtros */}
-      <div className="flex gap-3 flex-wrap">
-        <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-44" />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full sm:w-44" />
         <Select value={filterDep} onValueChange={setFilterDep}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Todas las áreas" />
           </SelectTrigger>
           <SelectContent>
@@ -188,7 +189,7 @@ const employeesWithStatus: EmployeeWithStatus[] = byDep.map(emp => {
           </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="w-full sm:w-44">
             <SelectValue placeholder="Todos los estados" />
           </SelectTrigger>
           <SelectContent>
@@ -198,6 +199,60 @@ const employeesWithStatus: EmployeeWithStatus[] = byDep.map(emp => {
             <SelectItem value="ausente">Ausentes</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {/* cards igual que antes */}
+      </div>
+
+      {/* Tabla — scroll horizontal en móvil */}
+      <div className="border rounded-lg bg-card overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Empleado</TableHead>
+              <TableHead className="hidden sm:table-cell">Área</TableHead>
+              <TableHead>Entrada</TableHead>
+              <TableHead className="hidden sm:table-cell">Salida</TableHead>
+              <TableHead className="hidden sm:table-cell">Horas</TableHead>
+              <TableHead>Estado</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.map(({ emp, checkIn, checkOut, horas, status }) => (
+              <TableRow key={emp.id}>
+                <TableCell>
+                  <p className="font-medium">{emp.first_name} {emp.last_name}</p>
+                  <p className="text-xs text-muted-foreground">{emp.rut}</p>
+                </TableCell>
+                <TableCell className="hidden sm:table-cell">
+                  {emp.departments
+                    ? <Badge variant="secondary">{emp.departments.name}</Badge>
+                    : <span className="text-muted-foreground">—</span>}
+                </TableCell>
+                <TableCell>
+                  {checkIn
+                    ? <span className="font-medium">{formatTime(checkIn.timestamp)}</span>
+                    : <span className="text-muted-foreground">—</span>}
+                </TableCell>
+                <TableCell className="hidden sm:table-cell">
+                  {checkOut
+                    ? <span className="font-medium">{formatTime(checkOut.timestamp)}</span>
+                    : <span className="text-muted-foreground">—</span>}
+                </TableCell>
+                <TableCell className="hidden sm:table-cell">
+                  {horas
+                    ? <span className="font-medium">{horas}</span>
+                    : <span className="text-muted-foreground">—</span>}
+                </TableCell>
+                <TableCell>
+                  <AttendanceBadge status={status} />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
       {!isWorkDay && (

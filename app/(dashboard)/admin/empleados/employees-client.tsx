@@ -20,7 +20,10 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
-import { Pencil, Trash2, Search } from "lucide-react"
+import { Pencil, Trash2, Search, Info } from "lucide-react"
+import {
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { useRouter } from "next/navigation"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -33,13 +36,27 @@ type Employee = {
   address: string
   position: string | null
   department_id: string | null
-  hour_rate: number | null
+  hire_date: string | null
+  vacation_days: number | null
   departments: { id: string; name: string } | null
+  overtime_requests: { hours: number; status: string }[]
 }
 
 const emptyForm = {
   first_name: "", last_name: "", rut: "", address: "",
-  position: "", department_id: "", hour_rate: "",
+  position: "", department_id: "", hire_date: "", vacation_days: "",
+}
+
+// ─── Ley chilena: 15 días hábiles por año = 1.25 días por mes trabajado ───────
+function calcVacacionesAcumuladas(hireDate: string | null): number {
+  if (!hireDate) return 0
+  const inicio = new Date(hireDate)
+  const hoy = new Date()
+  if (isNaN(inicio.getTime()) || inicio > hoy) return 0
+  const meses =
+    (hoy.getFullYear() - inicio.getFullYear()) * 12 +
+    (hoy.getMonth() - inicio.getMonth())
+  return Math.floor(meses * 1.25)
 }
 
 interface Props {
@@ -71,7 +88,8 @@ export default function EmpleadosClient({ initialEmployees, initialDepartments }
       address: emp.address,
       position: emp.position ?? "",
       department_id: emp.department_id ?? "",
-      hour_rate: emp.hour_rate?.toString() ?? "",
+      hire_date: emp.hire_date ?? "",
+      vacation_days: emp.vacation_days?.toString() ?? "",
     })
     setFormError(null)
     setDialogOpen(true)
@@ -92,7 +110,8 @@ export default function EmpleadosClient({ initialEmployees, initialDepartments }
         address: form.address,
         position: form.position,
         department_id: form.department_id || null,
-        hour_rate: form.hour_rate ? parseFloat(form.hour_rate) : 0,
+        hire_date: form.hire_date || null,
+        vacation_days: form.vacation_days ? parseInt(form.vacation_days) : 0,
       })
       if (res.success) {
         setDialogOpen(false)
@@ -116,146 +135,208 @@ export default function EmpleadosClient({ initialEmployees, initialDepartments }
     setForm(prev => ({ ...prev, [key]: e.target.value }))
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Empleados</h1>
-          <p className="text-sm text-muted-foreground mt-1">{initialEmployees.length} empleados registrados</p>
+    <TooltipProvider>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold">Empleados</h1>
+            <p className="text-sm text-muted-foreground mt-1">{initialEmployees.length} empleados registrados</p>
+          </div>
+          <CrearPerfilDialog onCreated={() => router.refresh()} />
         </div>
-        <CrearPerfilDialog onCreated={() => router.refresh()} />
-      </div>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder="Buscar por nombre o RUT…" className="pl-9"
-          value={search} onChange={e => setSearch(e.target.value)} />
-      </div>
+        <div className="relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Buscar por nombre o RUT…" className="pl-9"
+            value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
 
-      <div className="border rounded-lg bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>RUT</TableHead>
-              <TableHead>Cargo</TableHead>
-              <TableHead>Área</TableHead>
-              <TableHead>Tarifa/hr</TableHead>
-              <TableHead className="w-24" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.length === 0 ? (
+        <div className="border rounded-lg bg-card overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-10">
-                  {search ? "Sin resultados" : "No hay empleados registrados"}
-                </TableCell>
+                <TableHead>Nombre</TableHead>
+                <TableHead className="hidden sm:table-cell">RUT</TableHead>
+                <TableHead className="hidden sm:table-cell">Cargo</TableHead>
+                <TableHead className="hidden sm:table-cell">Área</TableHead>
+                <TableHead className="hidden sm:table-cell">Horas extra</TableHead>
+                <TableHead>
+                  <div className="flex items-center gap-1">
+                    Vacaciones
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="w-3.5 h-3.5 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs max-w-48">
+                          Saldo disponible · Acumulado según ley chilena: 1.25 días por mes trabajado (15 días hábiles/año)
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </TableHead>
+                <TableHead className="w-24" />
               </TableRow>
-            ) : (
-              filtered.map(emp => (
-                <TableRow key={emp.id}>
-                  <TableCell className="font-medium">{emp.first_name} {emp.last_name}</TableCell>
-                  <TableCell className="text-muted-foreground">{emp.rut}</TableCell>
-                  <TableCell>{emp.position ?? <span className="text-muted-foreground">—</span>}</TableCell>
-                  <TableCell>
-                    {emp.departments
-                      ? <Badge variant="secondary">{emp.departments.name}</Badge>
-                      : <span className="text-muted-foreground">—</span>}
-                  </TableCell>
-                  <TableCell>
-                    {emp.hour_rate
-                      ? `$${emp.hour_rate.toLocaleString("es-CL")}/hr`
-                      : <span className="text-muted-foreground">—</span>}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2 justify-end">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(emp)}>
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => setDeleteId(emp.id)}>
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
+            </TableHeader>
+            <TableBody>
+              {filtered.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
+                    {search ? "Sin resultados" : "No hay empleados registrados"}
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                filtered.map(emp => {
+                  const acumulados = calcVacacionesAcumuladas(emp.hire_date)
+                  const saldo = emp.vacation_days ?? 0
+                  const horasExtras = emp.overtime_requests
+                    ?.filter(o => o.status === "approved")
+                    .reduce((sum, o) => sum + o.hours, 0) ?? 0
+                    console.log("overtime empleado:", JSON.stringify(initialEmployees[0]?.overtime_requests))
+                  return (
+                    <TableRow key={emp.id}>
+                      <TableCell className="font-medium">
+                        {emp.first_name} {emp.last_name}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell text-muted-foreground">
+                        {emp.rut}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        {emp.position ?? <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        {emp.departments
+                          ? <Badge variant="secondary">{emp.departments.name}</Badge>
+                          : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        {horasExtras > 0
+                          ? <span className="font-medium">{horasExtras}h</span>
+                          : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{saldo} días</span>
+                          {emp.hire_date && (
+                            <span className="text-xs text-muted-foreground">
+                              {acumulados} acumulados por ley
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2 justify-end">
+                          <Button variant="ghost" size="icon" onClick={() => openEdit(emp)}>
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteId(emp.id)}>
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Dialog editar */}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Editar empleado</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-4 py-2">
+              <div className="space-y-1">
+                <Label>Nombre *</Label>
+                <Input value={form.first_name} onChange={f("first_name")} placeholder="Juan" />
+              </div>
+              <div className="space-y-1">
+                <Label>Apellido *</Label>
+                <Input value={form.last_name} onChange={f("last_name")} placeholder="Pérez" />
+              </div>
+              <div className="space-y-1">
+                <Label>RUT *</Label>
+                <Input value={form.rut} onChange={f("rut")} placeholder="12.345.678-9" />
+              </div>
+              <div className="space-y-1">
+                <Label>Cargo</Label>
+                <Input value={form.position} onChange={f("position")} placeholder="Desarrollador" />
+              </div>
+              <div className="space-y-1 col-span-2">
+                <Label>Dirección *</Label>
+                <Input value={form.address} onChange={f("address")} placeholder="Av. Ejemplo 123" />
+              </div>
+              <div className="space-y-1">
+                <Label>Área</Label>
+                <Select value={form.department_id}
+                  onValueChange={v => setForm(p => ({ ...p, department_id: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Sin área" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Sin área</SelectItem>
+                    {initialDepartments.map(d => (
+                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label>Fecha de contratación</Label>
+                <Input type="date" value={form.hire_date} onChange={f("hire_date")} />
+              </div>
+              <div className="space-y-1 col-span-2">
+                <Label className="flex items-center gap-1">
+                  Días de vacaciones disponibles
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="w-3.5 h-3.5 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs max-w-48">
+                        Saldo manual editable. Los días acumulados por ley se calculan automáticamente desde la fecha de contratación.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </Label>
+                <Input type="number" min="0" value={form.vacation_days} onChange={f("vacation_days")} placeholder="0" />
+                {form.hire_date && (
+                  <p className="text-xs text-muted-foreground">
+                    Acumulado por ley: {calcVacacionesAcumuladas(form.hire_date)} días hábiles
+                  </p>
+                )}
+              </div>
+            </div>
+            {formError && <p className="text-sm text-destructive">{formError}</p>}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+              <Button onClick={handleSave} disabled={isPending}>
+                {isPending ? "Guardando…" : "Guardar cambios"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* AlertDialog eliminar */}
+        <AlertDialog open={!!deleteId} onOpenChange={open => !open && setDeleteId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Eliminar empleado?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta acción no se puede deshacer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Eliminar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-
-      {/* Dialog editar */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Editar empleado</DialogTitle>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-2">
-            <div className="space-y-1">
-              <Label>Nombre *</Label>
-              <Input value={form.first_name} onChange={f("first_name")} placeholder="Juan" />
-            </div>
-            <div className="space-y-1">
-              <Label>Apellido *</Label>
-              <Input value={form.last_name} onChange={f("last_name")} placeholder="Pérez" />
-            </div>
-            <div className="space-y-1">
-              <Label>RUT *</Label>
-              <Input value={form.rut} onChange={f("rut")} placeholder="12.345.678-9" />
-            </div>
-            <div className="space-y-1">
-              <Label>Cargo</Label>
-              <Input value={form.position} onChange={f("position")} placeholder="Desarrollador" />
-            </div>
-            <div className="space-y-1 col-span-2">
-              <Label>Dirección *</Label>
-              <Input value={form.address} onChange={f("address")} placeholder="Av. Ejemplo 123" />
-            </div>
-            <div className="space-y-1">
-              <Label>Área</Label>
-              <Select value={form.department_id}
-                onValueChange={v => setForm(p => ({ ...p, department_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="Sin área" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Sin área</SelectItem>
-                  {initialDepartments.map(d => (
-                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>Tarifa por hora ($)</Label>
-              <Input type="number" value={form.hour_rate} onChange={f("hour_rate")} placeholder="5000" />
-            </div>
-          </div>
-          {formError && <p className="text-sm text-destructive">{formError}</p>}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={isPending}>
-              {isPending ? "Guardando…" : "Guardar cambios"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* AlertDialog eliminar */}
-      <AlertDialog open={!!deleteId} onOpenChange={open => !open && setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar empleado?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+    </TooltipProvider>
   )
 }
