@@ -25,7 +25,7 @@ export async function createEmployee(form: {
   position: string
   department_id: string | null
   hire_date?: string | null
-  vacation_days?: number
+  vacation_days?: number 
 }) {
   const parsed = employeeSchema.safeParse(form)
   if (!parsed.success) return { success: false, error: parsed.error.issues[0].message }
@@ -58,7 +58,7 @@ export async function updateEmployee(id: string, form: {
   position?: string
   department_id?: string | null
   hire_date?: string | null
-  vacation_days?: number
+  vacation_days?:  number | null
 }) {
   const idParsed = idSchema.safeParse(id)
   if (!idParsed.success) return { success: false, error: "ID inválido" }

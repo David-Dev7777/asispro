@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidateEmployees } from "@/lib/actions/revalidate"
+import { diasDisponibles } from "@/lib/actions/vacations-helpers"
 import { vacationSchema } from "@/lib/schemas"
 
 export type VacationResult =
@@ -25,14 +26,17 @@ async function getVacationBalance(employeeId: string, companyId: string) {
   const supabase = await createClient()
   const year = new Date().getFullYear()
 
-  const [{ data: settings }, { data: approved }] = await Promise.all([
-    supabase.from("company_settings").select("vacation_days").eq("company_id", companyId).single(),
+  const [{ data: employee }, { data: approved }] = await Promise.all([
+    supabase.from("employees")
+      .select("vacation_days, hire_date")
+      .eq("id", employeeId)
+      .single(),
     supabase.from("vacation_requests").select("days_requested")
       .eq("employee_id", employeeId).eq("status", "approved")
       .gte("start_date", `${year}-01-01`).lte("start_date", `${year}-12-31`),
   ])
 
-  const totalDays = settings?.vacation_days ?? 15
+  const totalDays = diasDisponibles(employee?.vacation_days ?? null, employee?.hire_date ?? null)
   const usedDays = approved?.reduce((acc, v) => acc + v.days_requested, 0) ?? 0
   return { total_days: totalDays, used_days: usedDays, remaining_days: totalDays - usedDays, year }
 }
@@ -159,3 +163,5 @@ export async function getCompanyVacationRequests(status?: string) {
   const { data } = await query
   return data ?? []
 }
+
+

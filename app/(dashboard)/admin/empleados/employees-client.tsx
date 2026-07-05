@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { updateEmployee, deleteEmployee } from "@/lib/actions/admin/employees"
+import { diasDisponibles, c_VacacionesAcumuladas } from "@/lib/actions/vacations-helpers"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -47,24 +48,15 @@ const emptyForm = {
   position: "", department_id: "", hire_date: "", vacation_days: "",
 }
 
-// ─── Ley chilena: 15 días hábiles por año = 1.25 días por mes trabajado ───────
-function calcVacacionesAcumuladas(hireDate: string | null): number {
-  if (!hireDate) return 0
-  const inicio = new Date(hireDate)
-  const hoy = new Date()
-  if (isNaN(inicio.getTime()) || inicio > hoy) return 0
-  const meses =
-    (hoy.getFullYear() - inicio.getFullYear()) * 12 +
-    (hoy.getMonth() - inicio.getMonth())
-  return Math.floor(meses * 1.25)
-}
+
 
 interface Props {
   initialEmployees: Employee[]
   initialDepartments: Department[]
+  usedDaysMap: Record<string, number>
 }
 
-export default function EmpleadosClient({ initialEmployees, initialDepartments }: Props) {
+export default function EmpleadosClient({ initialEmployees, initialDepartments, usedDaysMap }: Props) {
   const router = useRouter()
   const [search, setSearch] = useState("")
   const [isPending, startTransition] = useTransition()
@@ -111,7 +103,7 @@ export default function EmpleadosClient({ initialEmployees, initialDepartments }
         position: form.position,
         department_id: form.department_id || null,
         hire_date: form.hire_date || null,
-        vacation_days: form.vacation_days ? parseInt(form.vacation_days) : 0,
+        vacation_days: form.vacation_days !== "" ? parseInt(form.vacation_days) : null,
       })
       if (res.success) {
         setDialogOpen(false)
@@ -187,12 +179,13 @@ export default function EmpleadosClient({ initialEmployees, initialDepartments }
                 </TableRow>
               ) : (
                 filtered.map(emp => {
-                  const acumulados = calcVacacionesAcumuladas(emp.hire_date)
-                  const saldo = emp.vacation_days ?? 0
+                  const totalAsignado = diasDisponibles(emp.vacation_days, emp.hire_date)
+                  const usados = usedDaysMap[emp.id] ?? 0
+                  const saldo = totalAsignado - usados
+                  const esManual = emp.vacation_days !== null
                   const horasExtras = emp.overtime_requests
                     ?.filter(o => o.status === "approved")
                     .reduce((sum, o) => sum + o.hours, 0) ?? 0
-                    console.log("overtime empleado:", JSON.stringify(initialEmployees[0]?.overtime_requests))
                   return (
                     <TableRow key={emp.id}>
                       <TableCell className="font-medium">
@@ -217,11 +210,9 @@ export default function EmpleadosClient({ initialEmployees, initialDepartments }
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium">{saldo} días</span>
-                          {emp.hire_date && (
-                            <span className="text-xs text-muted-foreground">
-                              {acumulados} acumulados por ley
-                            </span>
-                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {usados > 0 ? `${usados} usados de ${totalAsignado}` : (esManual ? "Ingresado manualmente" : "Calculado por ley (Art. 67)")}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -300,12 +291,16 @@ export default function EmpleadosClient({ initialEmployees, initialDepartments }
                     </TooltipContent>
                   </Tooltip>
                 </Label>
-                <Input type="number" min="0" value={form.vacation_days} onChange={f("vacation_days")} placeholder="0" />
-                {form.hire_date && (
-                  <p className="text-xs text-muted-foreground">
-                    Acumulado por ley: {calcVacacionesAcumuladas(form.hire_date)} días hábiles
-                  </p>
-                )}
+                <Input
+                  type="number"
+                  min="0"
+                  value={form.vacation_days}
+                  onChange={f("vacation_days")}
+                  placeholder={`Auto: ${c_VacacionesAcumuladas(form.hire_date)}`}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Deja vacío para usar el cálculo automático por ley ({c_VacacionesAcumuladas(form.hire_date)} días).
+                </p>
               </div>
             </div>
             {formError && <p className="text-sm text-destructive">{formError}</p>}

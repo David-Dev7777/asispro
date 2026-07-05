@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { revalidateVacations } from "@/lib/actions/revalidate"
+import { revalidateEmployees, revalidateVacations } from "@/lib/actions/revalidate"
 
 export async function getVacationRequests() {
   const supabase = await createClient()
@@ -41,6 +41,7 @@ export async function approveVacation(id: string) {
 
   if (error) return { success: false, error: error.message }
   await revalidateVacations()
+  await revalidateEmployees()
   return { success: true }
 }
 
@@ -57,5 +58,6 @@ export async function rejectVacation(id: string, rejection_note: string) {
 
   if (error) return { success: false, error: error.message }
   await revalidateVacations()
+  await revalidateEmployees()
   return { success: true }
 }

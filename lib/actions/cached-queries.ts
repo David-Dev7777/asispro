@@ -112,3 +112,22 @@ export async function getJornada(date: string) {
     .order("timestamp", { ascending: true })
   return data ?? []
 }
+
+// ─── Vacation Balance (días usados este año) ──────────────────────────────────
+export async function getVacationsUsedThisYear() {
+  const profile = await getProfile()
+  if (!profile) return []
+
+  const supabase = await createClient()
+  const year = new Date().getFullYear()
+
+  const { data } = await supabase
+    .from("vacation_requests")
+    .select("employee_id, days_requested")
+    .eq("company_id", profile.company_id)
+    .eq("status", "approved")
+    .gte("start_date", `${year}-01-01`)
+    .lte("start_date", `${year}-12-31`)
+  return data ?? []
+}
+

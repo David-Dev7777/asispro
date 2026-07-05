@@ -1,4 +1,4 @@
-import { getEmployees, getDepartments } from "@/lib/actions/cached-queries"
+import { getEmployees, getDepartments, getVacationsUsedThisYear } from "@/lib/actions/cached-queries"
 import { getOvertimeAprobado } from "@/lib/actions/admin/employees"
 import EmpleadosClient from "./employees-client"
 
@@ -19,11 +19,17 @@ type Employee = {
 }
 
 export default async function EmpleadosPage() {
-  const [employees, departments, overtime] = await Promise.all([
+  const [employees, departments, overtime, vacationsUsed] = await Promise.all([
     getEmployees(),
     getDepartments(),
     getOvertimeAprobado(),
+    getVacationsUsedThisYear(),
   ])
+
+  const usedDaysMap: Record<string, number> = {}
+  for (const v of vacationsUsed) {
+    usedDaysMap[v.employee_id] = (usedDaysMap[v.employee_id] ?? 0) + v.days_requested
+  }
 
   const employeesWithOvertime = employees.map(emp => ({
     ...emp,
@@ -34,6 +40,7 @@ export default async function EmpleadosPage() {
     <EmpleadosClient
       initialEmployees={employeesWithOvertime as Employee[]}
       initialDepartments={departments as Department[]}
+      usedDaysMap={usedDaysMap}
     />
   )
 }

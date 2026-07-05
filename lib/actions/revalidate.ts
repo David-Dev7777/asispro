@@ -18,6 +18,7 @@ export async function revalidateEmployees() {
   const companyId = await getCompanyId()
   if (companyId) nextRevalidateTag(`employees-${companyId}`, "default")
   revalidatePath("/admin/empleados")
+  revalidatePath("/empleados", "layout") 
 }
 
 export async function revalidateDepartments() {
