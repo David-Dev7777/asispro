@@ -11,7 +11,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, UserCheck, Clock, UserX } from "lucide-react"
+import { UserCheck, Clock, UserX } from "lucide-react"
 
 type Department = { id: string; name: string }
 type Log = {
@@ -173,7 +173,6 @@ export default function JornadaClient({ initialDepartments, initialLogs, today, 
         <p className="text-sm text-muted-foreground mt-1">Seguimiento de asistencia diaria</p>
       </div>
 
-
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row gap-3">
         <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full sm:w-44" />
@@ -201,68 +200,14 @@ export default function JornadaClient({ initialDepartments, initialLogs, today, 
         </Select>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {/* cards igual que antes */}
-      </div>
-
-      {/* Tabla — scroll horizontal en móvil */}
-      <div className="border rounded-lg bg-card overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Empleado</TableHead>
-              <TableHead className="hidden sm:table-cell">Área</TableHead>
-              <TableHead>Entrada</TableHead>
-              <TableHead className="hidden sm:table-cell">Salida</TableHead>
-              <TableHead className="hidden sm:table-cell">Horas</TableHead>
-              <TableHead>Estado</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.map(({ emp, checkIn, checkOut, horas, status }) => (
-              <TableRow key={emp.id}>
-                <TableCell>
-                  <p className="font-medium">{emp.first_name} {emp.last_name}</p>
-                  <p className="text-xs text-muted-foreground">{emp.rut}</p>
-                </TableCell>
-                <TableCell className="hidden sm:table-cell">
-                  {emp.departments
-                    ? <Badge variant="secondary">{emp.departments.name}</Badge>
-                    : <span className="text-muted-foreground">—</span>}
-                </TableCell>
-                <TableCell>
-                  {checkIn
-                    ? <span className="font-medium">{formatTime(checkIn.timestamp)}</span>
-                    : <span className="text-muted-foreground">—</span>}
-                </TableCell>
-                <TableCell className="hidden sm:table-cell">
-                  {checkOut
-                    ? <span className="font-medium">{formatTime(checkOut.timestamp)}</span>
-                    : <span className="text-muted-foreground">—</span>}
-                </TableCell>
-                <TableCell className="hidden sm:table-cell">
-                  {horas
-                    ? <span className="font-medium">{horas}</span>
-                    : <span className="text-muted-foreground">—</span>}
-                </TableCell>
-                <TableCell>
-                  <AttendanceBadge status={status} />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
       {!isWorkDay && (
         <p className="text-sm text-muted-foreground bg-muted/50 rounded-md px-4 py-3">
           Este día no es un día laboral según la configuración de la empresa.
         </p>
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      {/* Stats: 2 columnas en móvil, 4 en desktop */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Presentes</CardTitle>
@@ -293,16 +238,16 @@ export default function JornadaClient({ initialDepartments, initialLogs, today, 
         </Card>
       </div>
 
-      {/* Tabla */}
-      <div className="border rounded-lg bg-card">
+      {/* Tabla única — scroll horizontal en móvil, columnas secundarias ocultas en pantallas chicas */}
+      <div className="border rounded-lg bg-card overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Empleado</TableHead>
-              <TableHead>Área</TableHead>
+              <TableHead className="hidden sm:table-cell">Área</TableHead>
               <TableHead>Entrada</TableHead>
-              <TableHead>Salida</TableHead>
-              <TableHead>Horas</TableHead>
+              <TableHead className="hidden sm:table-cell">Salida</TableHead>
+              <TableHead className="hidden sm:table-cell">Horas</TableHead>
               <TableHead>Estado</TableHead>
             </TableRow>
           </TableHeader>
@@ -322,7 +267,7 @@ export default function JornadaClient({ initialDepartments, initialLogs, today, 
                     <p className="font-medium">{emp.first_name} {emp.last_name}</p>
                     <p className="text-xs text-muted-foreground">{emp.rut}</p>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     {emp.departments
                       ? <Badge variant="secondary">{emp.departments.name}</Badge>
                       : <span className="text-muted-foreground">—</span>}
@@ -332,12 +277,12 @@ export default function JornadaClient({ initialDepartments, initialLogs, today, 
                       ? <span className="font-medium">{formatTime(checkIn.timestamp)}</span>
                       : <span className="text-muted-foreground">—</span>}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     {checkOut
                       ? <span className="font-medium">{formatTime(checkOut.timestamp)}</span>
                       : <span className="text-muted-foreground">—</span>}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     {horas
                       ? <span className="font-medium">{horas}</span>
                       : <span className="text-muted-foreground">—</span>}

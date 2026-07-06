@@ -25,10 +25,25 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const pathname = request.nextUrl.pathname
 
-  const publicRoutes = ['/login', '/signup']
-  const isPublicRoute = publicRoutes.some(r => pathname.startsWith(r))
+  // Rutas de "invitado": si ya hay sesión, no tiene sentido verlas → se redirige al dashboard
+  const guestOnlyRoutes = ['/login', '/signup', '/forgot-password']
+  const isGuestOnlyRoute = guestOnlyRoutes.some(r => pathname.startsWith(r))
 
-  // No autenticado → login
+  // Rutas del flujo de recuperación: deben ser accesibles SIEMPRE,
+  // con o sin sesión, y sin pasar por chequeos de rol/onboarding.
+  // /reset-password se visita con una sesión temporal creada por Supabase
+  // tras hacer clic en el link del correo, así que "user" puede existir acá
+  // sin que signifique que el usuario terminó de loguearse normalmente.
+  const authFlowRoutes = ['/reset-password', '/auth/confirm']
+  const isAuthFlowRoute = authFlowRoutes.some(r => pathname.startsWith(r))
+
+  const isPublicRoute = isGuestOnlyRoute || isAuthFlowRoute
+
+  if (isAuthFlowRoute) {
+    return supabaseResponse
+  }
+
+  // No autenticado en ruta privada → login
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
@@ -45,14 +60,13 @@ export async function middleware(request: NextRequest) {
 
     const role = profile?.role
 
-    // Autenticado en ruta pública → redirigir según rol
-    if (isPublicRoute) {
+    // Autenticado en ruta de invitado (login/signup/forgot-password) → a su dashboard
+    if (isGuestOnlyRoute) {
       const url = request.nextUrl.clone()
       if (role === 'admin') {
         url.pathname = '/admin'
         return NextResponse.redirect(url)
       }
-      // Empleado — verificar onboarding
       const { data: employee } = await supabase
         .from('employees')
         .select('id')

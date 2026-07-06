@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { login } from "@/lib/auth/signin";
+import { login } from "@/lib/actions/auth/signin";
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +36,15 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="password">Contraseña</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">Contraseña</Label>
+            <Link
+              href="/forgot-password"
+              className="text-sm text-[#78716C] hover:underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
           <Input id="password" name="password" type="password" required />
         </div>
 

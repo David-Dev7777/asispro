@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { AdminNav } from "@/components/admin/admin-nav"
-import { signOut } from "@/lib/auth/signout"
+import { signOut } from "@/lib/actions/auth/signout"
 import { LayoutDashboard, LogOut, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 

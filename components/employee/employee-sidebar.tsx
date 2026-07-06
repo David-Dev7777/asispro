@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { EmployeeNav } from "@/components/employee/employee-nav"
-import { signOut } from "@/lib/auth/signout"
+import { signOut } from "@/lib/actions/auth/signout"
 import { LogOut, Briefcase, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
