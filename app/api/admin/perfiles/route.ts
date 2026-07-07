@@ -8,6 +8,9 @@ const adminSupabase = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 )
 
+const ALLOWED_ROLES = ["employee", "admin"] as const
+type AllowedRole = (typeof ALLOWED_ROLES)[number]
+
 export async function POST(request: Request) {
   try {
     // 1. Verificar que quien llama es admin
@@ -26,7 +29,7 @@ export async function POST(request: Request) {
     }
 
     // 2. Datos del formulario
-    const { email, password } = await request.json()
+    const { email, password, role } = await request.json()
 
     if (!email || !password) {
       return NextResponse.json({ error: "Email y contraseña son obligatorios" }, { status: 400 })
@@ -36,13 +39,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "La contraseña debe tener al menos 6 caracteres" }, { status: 400 })
     }
 
+    // Nunca confiar en el rol tal cual viene del cliente: validar contra la whitelist.
+    // Esto evita que alguien mande un rol arbitrario (ej. "superadmin") manipulando el request.
+    if (!ALLOWED_ROLES.includes(role)) {
+      return NextResponse.json({ error: "Rol inválido" }, { status: 400 })
+    }
+    const safeRole: AllowedRole = role
+
     // 3. Crear usuario con service role — el trigger crea el perfil automáticamente
     const { data: newUser, error: authError } = await adminSupabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
       user_metadata: {
-        role: "employee",
+        role: safeRole,
         company_id: profile.company_id,
       },
     })

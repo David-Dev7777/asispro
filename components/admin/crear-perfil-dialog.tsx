@@ -7,19 +7,24 @@ import { Label } from "@/components/ui/label"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog"
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select"
 import { Plus } from "lucide-react"
 
 interface Props {
   onCreated: () => void
 }
 
+type Role = "employee" | "admin"
+
 export function CrearPerfilDialog({ onCreated }: Props) {
   const [open, setOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [form, setForm] = useState({ email: "", password: "" })
+  const [form, setForm] = useState({ email: "", password: "", role: "employee" as Role })
   const [error, setError] = useState<string | null>(null)
 
-  const f = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+  const f = (key: "email" | "password") => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(prev => ({ ...prev, [key]: e.target.value }))
 
   const handleSave = async () => {
@@ -38,7 +43,7 @@ export function CrearPerfilDialog({ onCreated }: Props) {
       const data = await res.json()
       if (data.success) {
         setOpen(false)
-        setForm({ email: "", password: "" })
+        setForm({ email: "", password: "", role: "employee" })
         onCreated()
       } else {
         setError(data.error ?? "Error desconocido")
@@ -58,9 +63,24 @@ export function CrearPerfilDialog({ onCreated }: Props) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Crear acceso de empleado</DialogTitle>
+            <DialogTitle>Crear acceso</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label>Rol *</Label>
+              <Select
+                value={form.role}
+                onValueChange={(value: Role) => setForm(prev => ({ ...prev, role: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="employee">Empleado</SelectItem>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-1">
               <Label>Email *</Label>
               <Input type="email" value={form.email} onChange={f("email")}
@@ -72,7 +92,9 @@ export function CrearPerfilDialog({ onCreated }: Props) {
                 placeholder="Mínimo 6 caracteres" />
             </div>
             <p className="text-xs text-muted-foreground">
-              El empleado completará su información personal al iniciar sesión por primera vez.
+              {form.role === "employee"
+                ? "El empleado completará su información personal al iniciar sesión por primera vez."
+                : "El administrador tendrá acceso al panel de administración de la empresa."}
             </p>
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
