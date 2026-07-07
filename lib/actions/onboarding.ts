@@ -40,6 +40,43 @@ export async function createOnboardingEmployee(form: {
     return { success: false, error: error.message }
   }
 
+  // Marca el onboarding como completo a nivel de perfil también.
+  // No bloqueamos el éxito si esto falla por algún motivo raro: el registro
+  // de employees ya se creó, que es lo que realmente gatilla la salida
+  // del onboarding para empleados en el middleware.
+  await supabase
+    .from("profiles")
+    .update({ onboarding_completed: true })
+    .eq("id", user.id)
+
   revalidatePath("/empleados")
+  return { success: true }
+}
+
+export async function completeAdminOnboarding(form: {
+  full_name: string
+  avatar_url?: string | null
+}) {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "No autenticado" }
+
+  if (!form.full_name.trim()) {
+    return { success: false, error: "El nombre es obligatorio" }
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      full_name: form.full_name.trim(),
+      avatar_url: form.avatar_url ?? null,
+      onboarding_completed: true,
+    })
+    .eq("id", user.id)
+
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath("/admin")
   return { success: true }
 }

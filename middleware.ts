@@ -25,15 +25,9 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const pathname = request.nextUrl.pathname
 
-  // Rutas de "invitado": si ya hay sesión, no tiene sentido verlas → se redirige al dashboard
   const guestOnlyRoutes = ['/login', '/signup', '/forgot-password']
   const isGuestOnlyRoute = guestOnlyRoutes.some(r => pathname.startsWith(r))
 
-  // Rutas del flujo de recuperación: deben ser accesibles SIEMPRE,
-  // con o sin sesión, y sin pasar por chequeos de rol/onboarding.
-  // /reset-password se visita con una sesión temporal creada por Supabase
-  // tras hacer clic en el link del correo, así que "user" puede existir acá
-  // sin que signifique que el usuario terminó de loguearse normalmente.
   const authFlowRoutes = ['/reset-password', '/auth/confirm']
   const isAuthFlowRoute = authFlowRoutes.some(r => pathname.startsWith(r))
 
@@ -54,17 +48,18 @@ export async function middleware(request: NextRequest) {
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, onboarding_completed')
       .eq('id', user.id)
       .single()
 
     const role = profile?.role
+    const adminNeedsOnboarding = role === 'admin' && !profile?.onboarding_completed
 
     // Autenticado en ruta de invitado (login/signup/forgot-password) → a su dashboard
     if (isGuestOnlyRoute) {
       const url = request.nextUrl.clone()
       if (role === 'admin') {
-        url.pathname = '/admin'
+        url.pathname = adminNeedsOnboarding ? '/onboarding' : '/admin'
         return NextResponse.redirect(url)
       }
       const { data: employee } = await supabase
@@ -73,6 +68,13 @@ export async function middleware(request: NextRequest) {
         .eq('user_id', user.id)
         .single()
       url.pathname = employee ? '/empleados' : '/onboarding'
+      return NextResponse.redirect(url)
+    }
+
+    // Admin recién creado (sin onboarding_completed) → forzar /onboarding
+    if (adminNeedsOnboarding && !pathname.startsWith('/onboarding')) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/onboarding'
       return NextResponse.redirect(url)
     }
 
@@ -107,16 +109,23 @@ export async function middleware(request: NextRequest) {
 
     // Si ya completó onboarding y trata de volver a /onboarding
     if (pathname.startsWith('/onboarding')) {
-      const { data: employee } = await supabase
-        .from('employees')
-        .select('id')
-        .eq('user_id', user.id)
-        .single()
-
-      if (employee) {
+      if (role === 'admin' && !adminNeedsOnboarding) {
         const url = request.nextUrl.clone()
-        url.pathname = '/empleados/inicio'
+        url.pathname = '/admin'
         return NextResponse.redirect(url)
+      }
+      if (role === 'employee') {
+        const { data: employee } = await supabase
+          .from('employees')
+          .select('id')
+          .eq('user_id', user.id)
+          .single()
+
+        if (employee) {
+          const url = request.nextUrl.clone()
+          url.pathname = '/empleados/inicio'
+          return NextResponse.redirect(url)
+        }
       }
     }
   }

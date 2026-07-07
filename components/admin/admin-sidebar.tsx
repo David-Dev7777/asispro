@@ -3,14 +3,16 @@
 import { useState } from "react"
 import { AdminNav } from "@/components/admin/admin-nav"
 import { signOut } from "@/lib/actions/auth/signout"
+import { UserProfileBadge } from "@/components/shared/user-profile-badge"
 import { LayoutDashboard, LogOut, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
+
 interface Props {
-  fullName: string | null
+  userBadge: React.ReactNode
 }
 
-export function AdminSidebar({ fullName }: Props) {
+export function AdminSidebar({ userBadge }: Props) {
   const [open, setOpen] = useState(false)
 
   const sidebarContent = (
@@ -32,9 +34,7 @@ export function AdminSidebar({ fullName }: Props) {
             <X className="w-4 h-4" />
           </Button>
         </div>
-        {fullName && (
-          <p className="text-xs text-muted-foreground mt-1 truncate">{fullName}</p>
-        )}
+        {userBadge}
       </div>
 
       {/* Nav */}

@@ -7,12 +7,10 @@ import { LogOut, Briefcase, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface Props {
-  firstName: string
-  lastName: string
-  position: string | null
+  userBadge: React.ReactNode
 }
 
-export function EmployeeSidebar({ firstName, lastName, position }: Props) {
+export function EmployeeSidebar({ userBadge }: Props) {
   const [open, setOpen] = useState(false)
 
   const sidebarContent = (
@@ -27,10 +25,10 @@ export function EmployeeSidebar({ firstName, lastName, position }: Props) {
             <X className="w-4 h-4" />
           </Button>
         </div>
-        <div className="mt-2">
-          <p className="text-sm font-medium truncate">{firstName} {lastName}</p>
-          {position && <p className="text-xs text-muted-foreground truncate">{position}</p>}
-        </div>
+      </div>
+
+      <div className="border-b">
+        {userBadge}
       </div>
 
       <EmployeeNav onNavigate={() => setOpen(false)} />

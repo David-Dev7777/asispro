@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { EmployeeSidebar } from "@/components/employee/employee-sidebar"
+import { UserProfileBadge } from "@/components/shared/user-profile-badge"
 
 export default async function EmployeeLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -9,7 +10,7 @@ export default async function EmployeeLayout({ children }: { children: React.Rea
 
   const { data: employee } = await supabase
     .from("employees")
-    .select("first_name, last_name, position")
+    .select("id")
     .eq("user_id", user.id)
     .single()
 
@@ -17,11 +18,7 @@ export default async function EmployeeLayout({ children }: { children: React.Rea
 
   return (
     <div className="flex h-screen bg-muted/30">
-      <EmployeeSidebar
-        firstName={employee.first_name}
-        lastName={employee.last_name}
-        position={employee.position}
-      />
+      <EmployeeSidebar userBadge={<UserProfileBadge />} />
 
       <main className="flex-1 overflow-auto">
         <div className="max-w-4xl mx-auto p-4 pt-16 md:pt-8 md:p-8">
