@@ -3,7 +3,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidateOvertime } from "@/lib/actions/revalidate"
 
-
 export async function getOvertimeRequests() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -23,7 +22,9 @@ export async function getOvertimeRequests() {
       *,
       employees ( id, first_name, last_name, rut,
         departments ( id, name )
-      )
+      ),
+      approved_by_profile:profiles!overtime_requests_approved_by_fkey ( id, full_name ),
+      rejected_by_profile:profiles!overtime_requests_rejected_by_fkey ( id, full_name )
     `)
     .eq("company_id", profile.company_id)
     .order("created_at", { ascending: false })
@@ -36,18 +37,17 @@ export async function approveOvertime(id: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: "No autenticado" }
 
-  const { data: admin } = await supabase
-    .from("employees")
-    .select("id")
-    .eq("user_id", user.id)
-    .single()
-
+  // approved_by referencia profiles(id), que es el mismo id que auth.users.id
+  // — no hay que buscar nada en employees, quien aprueba es siempre un admin.
   const { error } = await supabase
     .from("overtime_requests")
     .update({
       status: "approved",
-      approved_by: admin?.id ?? null,
+      approved_by: user.id,
       approved_at: new Date().toISOString(),
+      rejected_by: null,
+      rejected_at: null,
+      rejection_note: null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
@@ -59,11 +59,18 @@ export async function approveOvertime(id: string) {
 
 export async function rejectOvertime(id: string, rejection_note: string) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "No autenticado" }
+
   const { error } = await supabase
     .from("overtime_requests")
     .update({
       status: "rejected",
       rejection_note,
+      rejected_by: user.id,
+      rejected_at: new Date().toISOString(),
+      approved_by: null,
+      approved_at: null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

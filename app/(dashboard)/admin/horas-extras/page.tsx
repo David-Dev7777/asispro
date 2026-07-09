@@ -10,6 +10,7 @@ type OvertimeRequest = {
   status: string
   rejection_note: string | null
   approved_at: string | null
+  rejected_at: string | null
   created_at: string
   employees: {
     id: string
@@ -18,6 +19,8 @@ type OvertimeRequest = {
     rut: string
     departments: { id: string; name: string } | null
   } | null
+  approved_by_profile: { id: string; full_name: string | null } | null
+  rejected_by_profile: { id: string; full_name: string | null } | null
 }
 
 export default async function HorasExtrasPage() {

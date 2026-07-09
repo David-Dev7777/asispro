@@ -18,7 +18,7 @@ import {
 import { Check, X } from "lucide-react"
 import { useRouter } from "next/navigation"
 
-type VacationRequest = {
+export type VacationRequest = {
   id: string
   start_date: string
   end_date: string
@@ -27,6 +27,7 @@ type VacationRequest = {
   notes: string | null
   rejection_note: string | null
   approved_at: string | null
+  rejected_at: string | null
   created_at: string
   employees: {
     id: string
@@ -35,6 +36,8 @@ type VacationRequest = {
     rut: string
     departments: { id: string; name: string } | null
   } | null
+  approved_by_profile: { id: string; full_name: string | null } | null
+  rejected_by_profile: { id: string; full_name: string | null } | null
 }
 
 function formatDate(d: string) {
@@ -49,6 +52,16 @@ function StatusBadge({ status }: { status: string }) {
   }
   const s = map[status] ?? { label: status, className: "" }
   return <Badge className={s.className}>{s.label}</Badge>
+}
+
+function ReviewedBy({ request }: { request: VacationRequest }) {
+  if (request.status === "approved" && request.approved_by_profile) {
+    return <span className="text-sm">{request.approved_by_profile.full_name ?? "—"}</span>
+  }
+  if (request.status === "rejected" && request.rejected_by_profile) {
+    return <span className="text-sm">{request.rejected_by_profile.full_name ?? "—"}</span>
+  }
+  return <span className="text-muted-foreground">—</span>
 }
 
 interface Props {
@@ -121,13 +134,14 @@ export default function VacacionesClient({ initialRequests }: Props) {
               <TableHead>Días</TableHead>
               <TableHead>Notas</TableHead>
               <TableHead>Estado</TableHead>
+              <TableHead>Responsable</TableHead>
               <TableHead className="w-28" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-10">
                   Sin solicitudes
                 </TableCell>
               </TableRow>
@@ -150,6 +164,7 @@ export default function VacacionesClient({ initialRequests }: Props) {
                     )}
                   </TableCell>
                   <TableCell><StatusBadge status={r.status} /></TableCell>
+                  <TableCell><ReviewedBy request={r} /></TableCell>
                   <TableCell>
                     {r.status === "pending" && (
                       <div className="flex gap-1">
