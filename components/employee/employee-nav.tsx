@@ -2,13 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Clock, ClipboardList, Palmtree } from "lucide-react"
+import { LayoutDashboard, Clock, ClipboardList, Palmtree, UserCircle } from "lucide-react"
 
 const navItems = [
   { href: "/empleados/inicio",       label: "Inicio",       icon: LayoutDashboard },
   { href: "/empleados/asistencia",   label: "Asistencia",   icon: Clock },
   { href: "/empleados/horas-extras", label: "Horas extras", icon: ClipboardList },
   { href: "/empleados/vacaciones",   label: "Vacaciones",   icon: Palmtree },
+  { href: "/empleados/perfil",        label: "Perfil",        icon: UserCircle },
 ]
 
 interface Props {

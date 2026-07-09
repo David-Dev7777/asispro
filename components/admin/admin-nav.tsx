@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
-  Users, Building2, Clock, ClipboardList, Palmtree, Settings,
+  Users, Building2, Clock, ClipboardList, Palmtree, Settings, UserCircle,
 } from "lucide-react"
 
 const navItems = [
@@ -13,6 +13,7 @@ const navItems = [
   { href: "/admin/horas-extras",  label: "Horas extras",  icon: ClipboardList },
   { href: "/admin/vacaciones",    label: "Vacaciones",    icon: Palmtree },
   { href: "/admin/configuracion", label: "Configuración", icon: Settings },
+  { href: "/admin/perfil",        label: "Perfil",        icon: UserCircle },
 ]
 
 interface Props {

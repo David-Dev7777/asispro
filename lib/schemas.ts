@@ -89,3 +89,32 @@ export const resetPasswordSchema = z
  
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>
+
+// ─── Profile (actualizar datos) ─────────────────────────────────────────────
+ 
+export const updateEmailSchema = z.object({
+  email: z.string().email("Correo inválido"),
+})
+ 
+export const updatePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Ingresa tu contraseña actual"),
+    newPassword: z.string().min(8, "La nueva contraseña debe tener al menos 8 caracteres"),
+    confirmNewPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmNewPassword, {
+    message: "Las contraseñas no coinciden",
+    path: ["confirmNewPassword"],
+  })
+ 
+export const updateAdminProfileSchema = z.object({
+  full_name: z.string().min(1, "El nombre es obligatorio"),
+})
+ 
+export const updateEmployeeProfileSchema = z.object({
+  first_name: z.string().min(1, "El nombre es obligatorio"),
+  last_name: z.string().min(1, "El apellido es obligatorio"),
+  rut: z.string().min(1, "El RUT es obligatorio"),
+  address: z.string().min(1, "La dirección es obligatoria"),
+})
+ 
