@@ -41,6 +41,16 @@ export const vacationSchema = z.object({
   message: "No puedes solicitar vacaciones en fechas pasadas",
   path: ["start_date"],
 })
+// ─── Work Schedule ───────────────────────────────────────────────────────────
+
+export const workScheduleSchema = z.object({
+  name: z.string().min(1, "El nombre es obligatorio"),
+  work_start_time: z.string().min(1, "La hora de entrada es obligatoria"),
+  work_end_time: z.string().min(1, "La hora de salida es obligatoria"),
+  work_days: z.array(z.string()).min(1, "Selecciona al menos un día"),
+  late_tolerance_minutes: z.number().int().min(0).max(60),
+})
+ 
 
 // ─── Department ───────────────────────────────────────────────────────────────
 export const departmentSchema = z.object({

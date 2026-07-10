@@ -11,7 +11,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { UserCheck, Clock, UserX } from "lucide-react"
+import { Users, UserCheck, Clock, UserX } from "lucide-react"
 
 type Department = { id: string; name: string }
 type Log = {
@@ -30,10 +30,11 @@ type Log = {
     departments: { id: string; name: string } | null
   } | null
 }
-type Settings = {
-  work_start_time: string | null
-  late_tolerance_minutes: number | null
-  work_days: string[] | null
+type Schedule = {
+  work_start_time: string
+  work_end_time: string
+  work_days: string[]
+  late_tolerance_minutes: number
 }
 
 const DAY_KEYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
@@ -57,17 +58,19 @@ function calcHoras(logs: Log[], employeeId: string) {
   return `${Math.floor(mins / 60)}h ${Math.floor(mins % 60)}m`
 }
 
+type AttendanceStatus = "puntual" | "atrasado" | "ausente" | "libre"
+
 function getAttendanceStatus(
   checkIn: Log | undefined,
-  workStartTime: string | null,
-  toleranceMinutes: number | null
-): "puntual" | "atrasado" | "ausente" {
+  schedule: Schedule,
+  isScheduledDay: boolean
+): AttendanceStatus {
+  if (!isScheduledDay) return "libre"
   if (!checkIn) return "ausente"
-  if (!workStartTime) return "puntual"
 
   const checkInDate = new Date(checkIn.timestamp)
-  const [startH, startM] = workStartTime.split(":").map(Number)
-  const tolerance = toleranceMinutes ?? 15
+  const [startH, startM] = schedule.work_start_time.slice(0, 5).split(":").map(Number)
+  const tolerance = schedule.late_tolerance_minutes ?? 15
 
   const expectedStart = new Date(checkInDate)
   expectedStart.setHours(startH, startM, 0, 0)
@@ -76,9 +79,10 @@ function getAttendanceStatus(
   return diffMins > tolerance ? "atrasado" : "puntual"
 }
 
-function AttendanceBadge({ status }: { status: "puntual" | "atrasado" | "ausente" }) {
+function AttendanceBadge({ status }: { status: AttendanceStatus }) {
   if (status === "puntual") return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Puntual</Badge>
   if (status === "atrasado") return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">Atrasado</Badge>
+  if (status === "libre") return <Badge variant="secondary">Día libre</Badge>
   return <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Ausente</Badge>
 }
 
@@ -86,10 +90,13 @@ interface Props {
   initialDepartments: Department[]
   initialLogs: Log[]
   today: string
-  settings: Settings | null
+  defaultSchedule: Schedule
+  scheduleByDepartment: Record<string, Schedule>
 }
 
-export default function JornadaClient({ initialDepartments, initialLogs, today, settings }: Props) {
+export default function JornadaClient({
+  initialDepartments, initialLogs, today, defaultSchedule, scheduleByDepartment,
+}: Props) {
   const [date, setDate] = useState(today)
   const [logs, setLogs] = useState<Log[]>(initialLogs)
   const [filterDep, setFilterDep] = useState("all")
@@ -108,27 +115,28 @@ export default function JornadaClient({ initialDepartments, initialLogs, today, 
     return () => { mounted = false }
   }, [date])
 
-  // Verificar si el día seleccionado es día laboral
   const selectedDow = new Date(date + "T12:00:00").getDay()
   const selectedDayKey = DAY_KEYS[selectedDow]
-  const isWorkDay = !settings?.work_days || settings.work_days.includes(selectedDayKey)
+
+  // Resuelve qué jornada le corresponde a un empleado según su área,
+  // cayendo a la jornada por defecto si el área no tiene una asignada.
+  const getScheduleFor = (departmentId: string | undefined) =>
+    (departmentId && scheduleByDepartment[departmentId]) || defaultSchedule
 
   const employeeMap = new Map<string, Log["employees"]>()
   logs.forEach(l => { if (l.employees && !employeeMap.has(l.employees.id)) employeeMap.set(l.employees.id, l.employees) })
   const allEmployees = Array.from(employeeMap.values())
 
-  // Filtrar por área
   const byDep = filterDep === "all"
     ? allEmployees
     : allEmployees.filter(e => e?.departments?.id === filterDep)
 
-  // Calcular status de cada empleado
   type EmployeeWithStatus = {
     emp: NonNullable<Log["employees"]>
     checkIn: Log | undefined
     checkOut: Log | undefined
     horas: string | null
-    status: "puntual" | "atrasado" | "ausente"
+    status: AttendanceStatus
   }
 
   const employeesWithStatus: EmployeeWithStatus[] = byDep.map(emp => {
@@ -137,11 +145,14 @@ export default function JornadaClient({ initialDepartments, initialLogs, today, 
     const checkIn = empLogs.find(l => l.type === "check_in")
     const checkOut = empLogs.filter(l => l.type === "check_out").at(-1)
     const horas = calcHoras(logs, emp.id)
-    const status = getAttendanceStatus(checkIn, settings?.work_start_time ?? null, settings?.late_tolerance_minutes ?? null)
+
+    const schedule = getScheduleFor(emp.departments?.id)
+    const isScheduledDay = schedule.work_days.includes(selectedDayKey)
+    const status = getAttendanceStatus(checkIn, schedule, isScheduledDay)
+
     return { emp, checkIn, checkOut, horas, status }
   }).filter(Boolean) as EmployeeWithStatus[]
 
-  // Filtrar por status
   const filtered = filterStatus === "all"
     ? employeesWithStatus
     : employeesWithStatus.filter(e => e.status === filterStatus)
@@ -196,15 +207,10 @@ export default function JornadaClient({ initialDepartments, initialLogs, today, 
             <SelectItem value="puntual">Puntuales</SelectItem>
             <SelectItem value="atrasado">Atrasados</SelectItem>
             <SelectItem value="ausente">Ausentes</SelectItem>
+            <SelectItem value="libre">Día libre</SelectItem>
           </SelectContent>
         </Select>
       </div>
-
-      {!isWorkDay && (
-        <p className="text-sm text-muted-foreground bg-muted/50 rounded-md px-4 py-3">
-          Este día no es un día laboral según la configuración de la empresa.
-        </p>
-      )}
 
       {/* Stats: 2 columnas en móvil, 4 en desktop */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -238,7 +244,7 @@ export default function JornadaClient({ initialDepartments, initialLogs, today, 
         </Card>
       </div>
 
-      {/* Tabla única — scroll horizontal en móvil, columnas secundarias ocultas en pantallas chicas */}
+      {/* Tabla — scroll horizontal en móvil */}
       <div className="border rounded-lg bg-card overflow-x-auto">
         <Table>
           <TableHeader>

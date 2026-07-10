@@ -25,17 +25,13 @@ export async function getCompanySettings() {
   return data ?? null
 }
 
-export async function updateCompanySettings(form: {
+export async function updateCompanySettings(form: Partial<{
   geo_lat: number | null
   geo_lng: number | null
   geo_radius_m: number
   vacation_days: number
   work_hours_day: number
-  work_start_time: string
-  work_end_time: string
-  work_days: string[]
-  late_tolerance_minutes: number
-}) {
+}>) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: "No autenticado" }

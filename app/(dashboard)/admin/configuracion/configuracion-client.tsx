@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { MapPin, Clock, Palmtree, Ruler, CalendarDays } from "lucide-react"
+import { MapPin, Clock, Palmtree, Ruler } from "lucide-react"
+import WorkSchedulesClient from "./work-schedules-client"
 
 type Settings = {
   id: string
@@ -23,77 +23,85 @@ type Settings = {
   late_tolerance_minutes: number | null
 }
 
-const ALL_DAYS = [
-  { key: "monday",    label: "Lunes" },
-  { key: "tuesday",   label: "Martes" },
-  { key: "wednesday", label: "Miércoles" },
-  { key: "thursday",  label: "Jueves" },
-  { key: "friday",    label: "Viernes" },
-  { key: "saturday",  label: "Sábado" },
-  { key: "sunday",    label: "Domingo" },
-]
+type WorkSchedule = {
+  id: string
+  name: string
+  work_start_time: string
+  work_end_time: string
+  work_days: string[]
+  late_tolerance_minutes: number
+  is_default: boolean
+}
+
+type DepartmentRow = {
+  id: string
+  name: string
+  schedule_id: string | null
+  work_schedules: { id: string; name: string } | null
+}
 
 interface Props {
   initialSettings: Settings
+  initialSchedules: WorkSchedule[]
+  initialDepartments: DepartmentRow[]
 }
 
-export default function ConfiguracionClient({ initialSettings }: Props) {
-  const [isPending, startTransition] = useTransition()
-  const [success, setSuccess] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [form, setForm] = useState({
-    geo_lat:                initialSettings.geo_lat?.toString() ?? "",
-    geo_lng:                initialSettings.geo_lng?.toString() ?? "",
-    geo_radius_m:           initialSettings.geo_radius_m.toString(),
-    vacation_days:          initialSettings.vacation_days.toString(),
-    work_hours_day:         initialSettings.work_hours_day.toString(),
-    work_start_time:        initialSettings.work_start_time ?? "09:00",
-    work_end_time:          initialSettings.work_end_time ?? "18:00",
-    work_days:              initialSettings.work_days ?? ["monday","tuesday","wednesday","thursday","friday"],
-    late_tolerance_minutes: initialSettings.late_tolerance_minutes?.toString() ?? "15",
+export default function ConfiguracionClient({ initialSettings, initialSchedules, initialDepartments }: Props) {
+  // --- Geolocalización: estado y guardado independientes ---
+  const [isGeoPending, startGeoTransition] = useTransition()
+  const [geoSuccess, setGeoSuccess] = useState(false)
+  const [geoError, setGeoError] = useState<string | null>(null)
+  const [geoForm, setGeoForm] = useState({
+    geo_lat:      initialSettings.geo_lat?.toString() ?? "",
+    geo_lng:      initialSettings.geo_lng?.toString() ?? "",
+    geo_radius_m: initialSettings.geo_radius_m.toString(),
   })
 
-  const f = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm(prev => ({ ...prev, [key]: e.target.value }))
-    setSuccess(false)
-    setError(null)
+  const geoField = (key: keyof typeof geoForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setGeoForm(prev => ({ ...prev, [key]: e.target.value }))
+    setGeoSuccess(false)
+    setGeoError(null)
   }
 
-  const toggleDay = (day: string) => {
-    setForm(prev => ({
-      ...prev,
-      work_days: prev.work_days.includes(day)
-        ? prev.work_days.filter(d => d !== day)
-        : [...prev.work_days, day],
-    }))
-    setSuccess(false)
-    setError(null)
-  }
-
-  const handleSave = () => {
-    setError(null)
-    setSuccess(false)
-    if (form.work_days.length === 0) {
-      setError("Debes seleccionar al menos un día de trabajo")
-      return
-    }
-    startTransition(async () => {
+  const handleSaveGeo = () => {
+    setGeoError(null)
+    setGeoSuccess(false)
+    startGeoTransition(async () => {
       const res = await updateCompanySettings({
-        geo_lat:                form.geo_lat ? parseFloat(form.geo_lat) : null,
-        geo_lng:                form.geo_lng ? parseFloat(form.geo_lng) : null,
-        geo_radius_m:           parseInt(form.geo_radius_m),
-        vacation_days:          parseInt(form.vacation_days),
-        work_hours_day:         parseInt(form.work_hours_day),
-        work_start_time:        form.work_start_time,
-        work_end_time:          form.work_end_time,
-        work_days:              form.work_days,
-        late_tolerance_minutes: parseInt(form.late_tolerance_minutes),
+        geo_lat:      geoForm.geo_lat ? parseFloat(geoForm.geo_lat) : null,
+        geo_lng:      geoForm.geo_lng ? parseFloat(geoForm.geo_lng) : null,
+        geo_radius_m: parseInt(geoForm.geo_radius_m),
       })
-      if (res.success) {
-        setSuccess(true)
-      } else {
-        setError(res.error ?? "Error desconocido")
-      }
+      if (res.success) setGeoSuccess(true)
+      else setGeoError(res.error ?? "Error desconocido")
+    })
+  }
+
+  // --- Políticas laborales: estado y guardado independientes ---
+  const [isPoliciesPending, startPoliciesTransition] = useTransition()
+  const [policiesSuccess, setPoliciesSuccess] = useState(false)
+  const [policiesError, setPoliciesError] = useState<string | null>(null)
+  const [policiesForm, setPoliciesForm] = useState({
+    vacation_days:  initialSettings.vacation_days.toString(),
+    work_hours_day: initialSettings.work_hours_day.toString(),
+  })
+
+  const policiesField = (key: keyof typeof policiesForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPoliciesForm(prev => ({ ...prev, [key]: e.target.value }))
+    setPoliciesSuccess(false)
+    setPoliciesError(null)
+  }
+
+  const handleSavePolicies = () => {
+    setPoliciesError(null)
+    setPoliciesSuccess(false)
+    startPoliciesTransition(async () => {
+      const res = await updateCompanySettings({
+        vacation_days:  parseInt(policiesForm.vacation_days),
+        work_hours_day: parseInt(policiesForm.work_hours_day),
+      })
+      if (res.success) setPoliciesSuccess(true)
+      else setPoliciesError(res.error ?? "Error desconocido")
     })
   }
 
@@ -120,12 +128,12 @@ export default function ConfiguracionClient({ initialSettings }: Props) {
             <div className="space-y-1">
               <Label>Latitud</Label>
               <Input type="number" step="any" placeholder="-33.4569"
-                value={form.geo_lat} onChange={f("geo_lat")} />
+                value={geoForm.geo_lat} onChange={geoField("geo_lat")} />
             </div>
             <div className="space-y-1">
               <Label>Longitud</Label>
               <Input type="number" step="any" placeholder="-70.6483"
-                value={form.geo_lng} onChange={f("geo_lng")} />
+                value={geoForm.geo_lng} onChange={geoField("geo_lng")} />
             </div>
           </div>
           <div className="space-y-1">
@@ -134,7 +142,7 @@ export default function ConfiguracionClient({ initialSettings }: Props) {
               Radio permitido (metros)
             </Label>
             <Input type="number" min="50" max="5000" placeholder="200"
-              value={form.geo_radius_m} onChange={f("geo_radius_m")} />
+              value={geoForm.geo_radius_m} onChange={geoField("geo_radius_m")} />
             <p className="text-xs text-muted-foreground">
               Los empleados deben estar dentro de este radio para registrar asistencia
             </p>
@@ -145,56 +153,13 @@ export default function ConfiguracionClient({ initialSettings }: Props) {
               className="underline text-primary">Google Maps</a>{" "}
             haciendo clic derecho sobre la ubicación.
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Jornada laboral */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <CalendarDays className="w-4 h-4" />
-            Jornada laboral
-          </CardTitle>
-          <CardDescription>
-            Configura los horarios y días de trabajo
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label>Hora de entrada</Label>
-              <Input type="time" value={form.work_start_time} onChange={f("work_start_time")} />
-            </div>
-            <div className="space-y-1">
-              <Label>Hora de salida</Label>
-              <Input type="time" value={form.work_end_time} onChange={f("work_end_time")} />
-            </div>
-          </div>
+          {geoError && <p className="text-sm text-destructive">{geoError}</p>}
+          {geoSuccess && <p className="text-sm text-green-600">Ubicación guardada correctamente</p>}
 
-          <div className="space-y-1">
-            <Label>Tolerancia de atraso (minutos)</Label>
-            <Input type="number" min="0" max="60" placeholder="15"
-              value={form.late_tolerance_minutes} onChange={f("late_tolerance_minutes")} />
-            <p className="text-xs text-muted-foreground">
-              Minutos de gracia antes de marcar como atrasado
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Días de trabajo</Label>
-            <div className="flex flex-wrap gap-3">
-              {ALL_DAYS.map(({ key, label }) => (
-                <div key={key} className="flex items-center gap-2">
-                  <Checkbox
-                    id={key}
-                    checked={form.work_days.includes(key)}
-                    onCheckedChange={() => toggleDay(key)}
-                  />
-                  <label htmlFor={key} className="text-sm cursor-pointer">{label}</label>
-                </div>
-              ))}
-            </div>
-          </div>
+          <Button onClick={handleSaveGeo} disabled={isGeoPending} size="sm">
+            {isGeoPending ? "Guardando…" : "Guardar ubicación"}
+          </Button>
         </CardContent>
       </Card>
 
@@ -217,7 +182,7 @@ export default function ConfiguracionClient({ initialSettings }: Props) {
                 Días de vacaciones al año
               </Label>
               <Input type="number" min="1" max="365" placeholder="15"
-                value={form.vacation_days} onChange={f("vacation_days")} />
+                value={policiesForm.vacation_days} onChange={policiesField("vacation_days")} />
             </div>
             <div className="space-y-1">
               <Label className="flex items-center gap-1">
@@ -225,18 +190,25 @@ export default function ConfiguracionClient({ initialSettings }: Props) {
                 Horas de trabajo por día
               </Label>
               <Input type="number" min="1" max="24" placeholder="8"
-                value={form.work_hours_day} onChange={f("work_hours_day")} />
+                value={policiesForm.work_hours_day} onChange={policiesField("work_hours_day")} />
             </div>
           </div>
+
+          {policiesError && <p className="text-sm text-destructive">{policiesError}</p>}
+          {policiesSuccess && <p className="text-sm text-green-600">Políticas guardadas correctamente</p>}
+
+          <Button onClick={handleSavePolicies} disabled={isPoliciesPending} size="sm">
+            {isPoliciesPending ? "Guardando…" : "Guardar políticas"}
+          </Button>
         </CardContent>
       </Card>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      {success && <p className="text-sm text-green-600">Configuración guardada correctamente</p>}
-
-      <Button onClick={handleSave} disabled={isPending} className="w-full sm:w-auto">
-        {isPending ? "Guardando…" : "Guardar configuración"}
-      </Button>
+      {/* Jornadas por área — ya tiene su propio guardado por acción
+          (crear/editar/asignar), independiente de las cards de arriba */}
+      <WorkSchedulesClient
+        initialSchedules={initialSchedules}
+        initialDepartments={initialDepartments}
+      />
     </div>
   )
 }
